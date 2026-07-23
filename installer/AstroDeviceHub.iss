@@ -13,6 +13,7 @@ DefaultGroupName=Astro Device Hub
 UninstallDisplayName=Astro Device Hub
 OutputDir=..\dist\installer
 OutputBaseFilename=AstroDeviceHub-Setup-{#ProductVersion}
+SetupIconFile=..\desktop\Assets\AstroDeviceHub.ico
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern

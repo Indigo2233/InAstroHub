@@ -8,6 +8,7 @@
     <AssemblyName>AstroDeviceHub.App</AssemblyName>
     <Product>Astro Device Hub</Product>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\AstroDeviceHub.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4078.44" />
