@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Astro Device Hub</title>
+  <link rel="stylesheet" href="app.css">
+  <style>
+    .nav-item{font-size:14px}.topbar h1{font-size:26px}.hero h2{font-size:34px}.hero{min-height:230px}.hero p{display:none}.metrics{grid-template-columns:repeat(2,1fr);max-width:760px}.metrics article{padding:22px}.metrics small{display:none}.metrics strong{font-size:32px;margin-left:0}.metric-label{display:block;color:#8fa4ad;font-size:14px;font-weight:600;margin-top:6px}.section-heading h2,.panel h2,.device-page-intro h2{font-size:23px}.device-title h3{font-size:16px}.device-readings strong,.device-actions button{font-size:12px}.side-status small{display:none}@media(max-width:820px){.hero h2{font-size:28px}.metrics{grid-template-columns:1fr}.topbar h1{font-size:22px}}
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">✦</span><div><strong>Astro Device Hub</strong><small>OBSERVATORY CONTROL</small></div></div>
+      <nav id="navigation">
+        <button class="nav-item active" data-view="dashboard"><span>⌂</span>总览</button>
+        <p>设备</p>
+        <button class="nav-item" data-view="caa"><span>◌</span>电动 CAA<em id="caaBadge">0</em></button>
+        <button class="nav-item" data-view="focuser"><span>◎</span>电动调焦器<em id="focuserBadge">0</em></button>
+        <button class="nav-item" data-view="cover"><span>◐</span>电动平场板<em id="coverBadge">0</em></button>
+        <button class="nav-item" data-view="wheel"><span>✺</span>电动滤镜轮<em id="wheelBadge">0</em></button>
+        <p>系统</p>
+        <button class="nav-item" data-view="firmware"><span>⇧</span>固件中心</button>
+        <button class="nav-item" data-view="server"><span>◈</span>Server 模式</button>
+      </nav>
+      <div class="side-status"><i></i><div><strong>设备服务运行中</strong></div></div>
+      <div class="version">ASTRO HUB · V0.3.0</div>
+    </aside>
+    <section class="workspace">
+      <header class="topbar">
+        <div><p id="pageEyebrow">CONTROL CENTER</p><h1 id="pageTitle">观测设备总览</h1></div>
+        <div class="top-actions"><button class="icon-btn" id="refreshButton" title="刷新">↻</button><button class="primary" id="addButton">＋ 添加设备</button></div>
+      </header>
+      <main>
+        <section class="view active" id="view-dashboard">
+          <div class="hero">
+            <div><span class="live-pill"><i></i> ALL SYSTEMS OPERATIONAL</span><h2>设备已经准备就绪。</h2></div>
+            <div class="sky-orbit"><span class="orbit one"></span><span class="orbit two"></span><b>✦</b><small>LOCAL<br>SERVER</small></div>
+          </div>
+          <div class="metrics">
+            <article><span class="metric-icon cyan">◈</span><div><strong id="deviceCount">0</strong><span class="metric-label">台已登记设备</span></div></article>
+            <article><span class="metric-icon green">⌁</span><div><strong id="onlineCount">0</strong><span class="metric-label">台在线设备</span></div></article>
+          </div>
+          <div class="section-heading"><div><p>DEVICE FLEET</p><h2>设备工作台</h2></div><button class="text-btn" data-go="server">查看 Server 状态 →</button></div>
+          <div id="dashboardDevices" class="device-grid"></div>
+        </section>
+        <section class="view" id="view-device">
+          <div class="device-page-intro"><div class="large-symbol" id="deviceSymbol">◌</div><div><p id="deviceDescription">设备控制</p><h2 id="deviceHeading">电动 CAA</h2></div><div class="capacity"><span>应用连接上限</span><strong id="capacityValue">2</strong></div></div>
+          <div id="filteredDevices" class="device-grid expanded"></div>
+        </section>
+        <section class="view" id="view-firmware">
+          <div class="firmware-layout">
+            <article class="panel firmware-card">
+              <div class="panel-title"><span class="metric-icon cyan">⇧</span><div><p>FIRMWARE FLASHER</p><h2>固件刷写中心</h2></div></div>
+              <p class="muted">选择设备、主控型号与固件包。软件会验证文件类型、断开状态，并在刷写完成后执行校验。</p>
+              <div class="form-grid"><label>目标设备<select id="flashDevice"></select></label><label>主控型号<select id="flashTarget"><option value="Nano">Arduino Nano</option><option value="NanoOldBootloader">Nano Old Bootloader</option><option value="Esp8266">ESP8266 · D1 mini</option></select></label><label>刷写串口<select id="flashPort"></select></label></div>
+              <label class="drop-zone" id="dropZone"><input id="firmwareFile" type="file" accept=".hex,.bin"><span>⇧</span><strong id="fileName">选择或拖入固件包</strong><small>Arduino Nano 使用 .hex · ESP8266 使用 .bin</small></label>
+              <label class="safety" id="motorSafety"><input id="motorPowerDisconnected" type="checkbox"><span><strong>CAA 安全确认</strong><small>12V 电机电源已经断开，仅保留 USB 连接。</small></span></label>
+              <button class="primary wide" id="flashButton">开始刷写并校验</button>
+            </article>
+            <article class="panel flash-console">
+              <div class="console-head"><div><i></i><i></i><i></i></div><span>FLASH OUTPUT</span><button id="clearLog">清空</button></div>
+              <pre id="flashLog">Astro Device Hub Firmware Service v0.3.0
+等待固件任务…</pre>
+              <div class="flash-progress"><div id="flashProgress"></div></div>
+            </article>
+          </div>
+          <div class="firmware-notes"><article><strong>01</strong><div><h3>文件校验</h3><p>归档固件并生成 SHA-256 摘要。</p></div></article><article><strong>02</strong><div><h3>安全检查</h3><p>确认连接租约、目标板型与文件格式。</p></div></article><article><strong>03</strong><div><h3>上传验证</h3><p>Arduino CLI 写入后验证固件内容。</p></div></article></div>
+        </section>
+        <section class="view" id="view-server">
+          <div class="server-hero panel"><div><span class="server-radar"><i></i></span><div><p>LOCAL DEVICE SERVICE</p><h2>本地设备服务正在运行</h2></div></div><span class="server-state">运行中</span></div>
+          <div class="section-heading"><div><p>ACTIVE APPLICATIONS</p><h2>当前应用连接</h2></div></div>
+          <div class="panel"><div id="leaseTable" class="lease-table"></div></div>
+          <details class="advanced-access">
+            <summary>高级：局域网远程控制</summary>
+            <div class="advanced-access-content">
+              <p>开启后，局域网客户端须在请求中携带访问令牌。保存设置后请重启桌面程序。</p>
+              <label class="remote-toggle"><input id="remoteAccessEnabled" type="checkbox">允许局域网远程控制</label>
+              <label>访问令牌<input id="remoteAccessToken" autocomplete="off" placeholder="留空时自动生成安全令牌"></label>
+              <div class="advanced-actions"><button class="primary" id="saveRemoteAccess">保存高级设置</button><button class="text-btn" id="copyRemoteToken" type="button">复制令牌</button></div>
+              <p id="remoteAccessHint" class="muted"></p>
+            </div>
+          </details>
+        </section>
+      </main>
+    </section>
+  </div>
+  <dialog id="deviceModal">
+    <form method="dialog" id="deviceForm">
+      <button class="dialog-close" value="cancel">×</button><p class="eyebrow">NEW HARDWARE</p><h2>添加观测设备</h2>
+      <label>设备名称<input id="deviceName" required placeholder="例如：主镜头 CAA"></label>
+      <label>设备类型<select id="deviceKind"><option value="Caa">电动 CAA</option><option value="Focuser">电动调焦器</option><option value="CoverCalibrator">电动平场板</option><option value="FilterWheel">电动滤镜轮</option></select></label>
+      <div class="split"><label>连接方式<select id="deviceTransport"><option value="Serial">USB 串口</option><option value="Tcp">TCP / Wi-Fi</option></select></label><label id="devicePortLabel">波特率<select id="deviceBaud"><option>9600</option><option>57600</option><option>115200</option></select></label></div>
+      <label>连接地址<input id="deviceEndpoint" required value="COM3"></label>
+      <label id="tcpPortField" hidden>TCP 端口<input id="deviceTcpPort" type="number" value="4030"></label>
+      <p class="form-error" id="formError"></p><button class="primary wide" value="default">保存设备</button>
+    </form>
+  </dialog>
+  <div id="toast" class="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="AstroDeviceHub.csproj" />
+  <Project Path="ascom/AstroDeviceHub.Ascom.csproj" />
+  <Project Path="desktop/AstroDeviceHub.Desktop.csproj" />
+  <Project Path="tests/AstroDeviceHub.Tests.csproj" />
+</Solution>

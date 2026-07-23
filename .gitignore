@@ -1,0 +1,42 @@
+# .NET build output
+[Bb]in/
+[Oo]bj/
+[Dd]ist/
+[Tt]est[Rr]esults/
+coverage/
+coverage*/
+*.coverage
+*.coveragexml
+
+# Visual Studio, Rider, and user-specific state
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# Local diagnostics and generated visual-review artifacts
+.artifacts/
+*.log
+*.tmp
+*.cache
+
+# Signing keys, certificates, and local secrets
+*.pfx
+*.p12
+*.snk
+secrets.json
+appsettings.Development.json
+
+# NuGet and JavaScript package restore state
+packages/
+*.nupkg
+*.snupkg
+node_modules/
+
+# Windows Explorer metadata
+Thumbs.db
+Desktop.ini

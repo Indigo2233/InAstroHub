@@ -1,0 +1,12 @@
+<Application x:Class="AstroDeviceHub.Desktop.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <SolidColorBrush x:Key="WindowBackground" Color="#071016"/>
+        <Style TargetType="ToolTip">
+            <Setter Property="Background" Value="#14232D"/>
+            <Setter Property="Foreground" Value="#DDEBF0"/>
+            <Setter Property="BorderBrush" Value="#29414D"/>
+        </Style>
+    </Application.Resources>
+</Application>
