@@ -1,14 +1,17 @@
-using Microsoft.AspNetCore.Builder;
+using System.Diagnostics;
+using System.Net.Http;
 using System.IO;
 using System.Threading;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace AstroDeviceHub.Desktop;
 
 public partial class App : Application
 {
     private Mutex? _singleInstance;
-    private WebApplication? _server;
+    private readonly HttpClient _serverClient = new() { BaseAddress = new Uri("http://127.0.0.1:5000"), Timeout = TimeSpan.FromSeconds(2) };
+    private readonly DispatcherTimer _heartbeatTimer = new() { Interval = TimeSpan.FromSeconds(2) };
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -23,12 +26,10 @@ public partial class App : Application
         base.OnStartup(e);
         try
         {
-            var webRoot = Path.Combine(AppContext.BaseDirectory, "wwwroot");
-            _server = HubWebApplication.Build(
-                HubWebApplication.ResolveBindingArguments(Array.Empty<string>()),
-                AppContext.BaseDirectory,
-                webRoot);
-            await _server.StartAsync();
+            await EnsureServerAvailableAsync();
+            _heartbeatTimer.Tick += async (_, _) => await SendHeartbeatAsync();
+            _heartbeatTimer.Start();
+            await SendHeartbeatAsync();
             new MainWindow().Show();
         }
         catch (Exception ex)
@@ -40,17 +41,57 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        if (_server is not null)
-        {
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-            try { _server.StopAsync(timeout.Token).GetAwaiter().GetResult(); } catch { }
-            _server.DisposeAsync().AsTask().GetAwaiter().GetResult();
-        }
+        _heartbeatTimer.Stop();
+        _serverClient.Dispose();
         if (_singleInstance is not null)
         {
             try { _singleInstance.ReleaseMutex(); } catch (ApplicationException) { }
             _singleInstance.Dispose();
         }
         base.OnExit(e);
+    }
+
+    private async Task EnsureServerAvailableAsync()
+    {
+        if (await IsServerHealthyAsync()) return;
+
+        var executable = Path.Combine(AppContext.BaseDirectory, "server", "AstroDeviceHub.exe");
+        if (!File.Exists(executable))
+            throw new FileNotFoundException("找不到本地服务程序。请重新安装 Astro Device Hub。", executable);
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = executable,
+            WorkingDirectory = Path.GetDirectoryName(executable)!,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden
+        });
+
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            await Task.Delay(250);
+            if (await IsServerHealthyAsync()) return;
+        }
+        throw new InvalidOperationException("本地服务启动超时。请检查端口 5000 是否被占用。");
+    }
+
+    private async Task<bool> IsServerHealthyAsync()
+    {
+        try
+        {
+            using var response = await _serverClient.GetAsync("/api/health");
+            return response.IsSuccessStatusCode;
+        }
+        catch { return false; }
+    }
+
+    private async Task SendHeartbeatAsync()
+    {
+        try
+        {
+            using var response = await _serverClient.PostAsync("/api/desktop/heartbeat", null);
+        }
+        catch { }
     }
 }

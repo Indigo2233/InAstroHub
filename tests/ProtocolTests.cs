@@ -95,6 +95,30 @@ public sealed class DeviceSlotTests
     }
 }
 
+public sealed class DesktopRestartPolicyTests
+{
+    [Fact]
+    public void RestartsWhenAClientIsConnectedAndDesktopHeartbeatExpired()
+    {
+        var now = new DateTimeOffset(2026, 7, 23, 12, 0, 0, TimeSpan.Zero);
+        Assert.True(DesktopRestartPolicy.ShouldRestart(1, now - DesktopRestartPolicy.HeartbeatTimeout, now));
+    }
+
+    [Fact]
+    public void DoesNotRestartWhenNoApplicationIsConnected()
+    {
+        var now = new DateTimeOffset(2026, 7, 23, 12, 0, 0, TimeSpan.Zero);
+        Assert.False(DesktopRestartPolicy.ShouldRestart(0, null, now));
+    }
+
+    [Fact]
+    public void DoesNotRestartWhileDesktopHeartbeatIsFresh()
+    {
+        var now = new DateTimeOffset(2026, 7, 23, 12, 0, 0, TimeSpan.Zero);
+        Assert.False(DesktopRestartPolicy.ShouldRestart(1, now - TimeSpan.FromSeconds(2), now));
+    }
+}
+
 public sealed class FirmwareServiceTests
 {
     [Fact]

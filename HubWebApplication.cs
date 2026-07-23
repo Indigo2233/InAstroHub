@@ -23,6 +23,8 @@ public static class HubWebApplication
         builder.Services.AddSingleton<DeviceHub>();
         builder.Services.AddSingleton<FirmwareService>();
         builder.Services.AddSingleton<ServerAccessStore>();
+        builder.Services.AddSingleton<DesktopPresenceTracker>();
+        builder.Services.AddHostedService<DesktopSupervisor>();
 
         var app = builder.Build();
         app.Use(async (context, next) =>
@@ -42,6 +44,11 @@ public static class HubWebApplication
         app.UseStaticFiles();
 
         app.MapGet("/api/health", () => Results.Ok(new { status = "ok", product = "Astro Device Hub", version = "0.3.0", serverTime = DateTimeOffset.Now }));
+        app.MapPost("/api/desktop/heartbeat", (DesktopPresenceTracker presence) =>
+        {
+            presence.RecordHeartbeat();
+            return Results.NoContent();
+        });
         app.MapGet("/api/server", (DeviceHub hub) => Results.Ok(hub.ServerStatus()));
         app.MapGet("/api/server/access", (ServerAccessStore access) =>
         {

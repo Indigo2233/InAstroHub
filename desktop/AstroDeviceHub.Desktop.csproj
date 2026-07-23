@@ -11,13 +11,5 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4078.44" />
-    <ProjectReference Include="..\AstroDeviceHub.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="..\wwwroot\**\*">
-      <Link>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
   </ItemGroup>
 </Project>

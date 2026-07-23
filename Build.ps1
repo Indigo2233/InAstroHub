@@ -19,6 +19,10 @@ dotnet publish (Join-Path $projectRoot 'AstroDeviceHub.csproj') -c Release -r wi
 dotnet publish (Join-Path $projectRoot 'desktop\AstroDeviceHub.Desktop.csproj') -c Release -r win-x64 --self-contained true -o $desktopOutput
 dotnet publish (Join-Path $projectRoot 'ascom\AstroDeviceHub.Ascom.csproj') -c Release -o $ascomOutput
 
+$desktopServer = Join-Path $desktopOutput 'server'
+New-Item -ItemType Directory -Force -Path $desktopServer | Out-Null
+Copy-Item -Path (Join-Path $serverOutput '*') -Destination $desktopServer -Recurse -Force
+
 $nestedServer = Join-Path $ascomOutput 'server'
 New-Item -ItemType Directory -Force -Path $nestedServer | Out-Null
 Copy-Item -Path (Join-Path $serverOutput '*') -Destination $nestedServer -Recurse -Force

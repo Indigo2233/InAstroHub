@@ -41,6 +41,7 @@ public sealed class DeviceHub : IDisposable
 
     public static IEnumerable<string> ListPorts() => SerialPort.GetPortNames().OrderBy(x => x);
     public IEnumerable<DeviceSnapshot> List() => _devices.Values.OrderBy(x => x.Kind).ThenBy(x => x.AscomSlot).Select(x => x.Snapshot());
+    public int ActiveClientCount => _devices.Values.Sum(x => x.Snapshot().Clients.Count);
     public object ServerStatus()
     {
         var snapshots = List().ToArray();
@@ -49,7 +50,7 @@ public sealed class DeviceHub : IDisposable
             state = "running",
             deviceCount = snapshots.Length,
             connectedDeviceCount = snapshots.Count(x => x.Clients.Count > 0),
-            activeClientCount = snapshots.Sum(x => x.Clients.Count),
+            activeClientCount = ActiveClientCount,
             startedAt = System.Diagnostics.Process.GetCurrentProcess().StartTime,
             processId = Environment.ProcessId
         };
