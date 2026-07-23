@@ -35,12 +35,12 @@ dotnet run --project .\desktop\AstroDeviceHub.Desktop.csproj
 
 注册后，ASCOM Chooser 中会出现以下四个驱动：
 
-- `InECAA`
-- `InEFucoser`
-- `InDLCoverCalibrator`
-- `InEFilterWheel`
+- `InECAA-Device1` 至 `InECAA-Device3`
+- `InEFucoser-Device1` 至 `InEFucoser-Device3`
+- `InDLCoverCalibrator-Device1` 至 `InDLCoverCalibrator-Device3`
+- `InEFilterWheel-Device1` 至 `InEFilterWheel-Device3`
 
-NINA 仅需在 ASCOM Chooser 中选择对应的 In 系列驱动。桌面程序关闭时，发布目录中的 ASCOM 驱动可以自动启动随附的本地 Hub 服务。
+每类设备最多可添加三台。设备按添加顺序占用 Device1 至 Device3；删除后槽位保留为空，不会自动重排，因此 NINA 重启后仍会选择原先保存的 Driver ID。桌面程序关闭时，发布目录中的 ASCOM 驱动可以自动启动随附的本地 Hub 服务。
 
 ## 安装包
 

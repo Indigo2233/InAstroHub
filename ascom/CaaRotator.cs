@@ -10,20 +10,28 @@ namespace AstroDeviceHub.Ascom
     [ProgId("ASCOM.AstroDeviceHub.Rotator")]
     [ComVisible(true)]
     [ClassInterface(ClassInterfaceType.None)]
-    public sealed class CaaRotator : IRotatorV2
+    public class CaaRotator : IRotatorV2
     {
         private const double StepsPerDegree = 100.0;
         private const double CenterSteps = 200.0 * StepsPerDegree;
-        private readonly HubClient hub = new HubClient(HubSettings.BaseUrl, HubSettings.NewClientId("ASCOM-Rotator"), "Caa");
+        private readonly HubClient hub;
+        private readonly int ascomSlot;
         private bool reverse;
         private float target;
 
+        public CaaRotator() : this(1) { }
+        protected CaaRotator(int ascomSlot)
+        {
+            this.ascomSlot = ascomSlot;
+            hub = new HubClient(HubSettings.BaseUrl, HubSettings.NewClientId("ASCOM-Rotator-Device" + ascomSlot), "Caa", ascomSlot);
+        }
+
         public bool Connected { get => hub.Connected; set { if (value == hub.Connected) return; if (value) hub.Connect(); else hub.Disconnect(); } }
         public string Description => "Astro Device Hub 电动 CAA 驱动";
-        public string DriverInfo => "InECAA · Astro Device Hub ASCOM Local Server";
+        public string DriverInfo => "InECAA-Device" + ascomSlot + " · Astro Device Hub ASCOM Local Server";
         public string DriverVersion => "0.2.0";
         public short InterfaceVersion => 2;
-        public string Name => "InECAA";
+        public string Name => "InECAA-Device" + ascomSlot;
         public ArrayList SupportedActions => DriverSupport.NoActions;
         public bool CanReverse => true;
         public bool IsMoving { get { int p; bool moving; ReadMotion(out p, out moving); return moving; } }

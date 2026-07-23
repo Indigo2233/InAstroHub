@@ -60,6 +60,7 @@ public static class HubWebApplication
         });
         app.MapGet("/api/devices", (DeviceHub hub) => Results.Ok(hub.List()));
         app.MapGet("/api/devices/by-kind/{kind}", (DeviceHub hub, DeviceKind kind) => hub.FindByKind(kind));
+        app.MapGet("/api/devices/by-kind/{kind}/slot/{slot:int}", (DeviceHub hub, DeviceKind kind, int slot) => hub.FindByKindAndSlot(kind, slot));
         app.MapGet("/api/ports", () => Results.Ok(DeviceHub.ListPorts()));
         app.MapPost("/api/devices", (DeviceHub hub, DeviceRequest request) => hub.Add(request));
         app.MapDelete("/api/devices/{id}", (DeviceHub hub, string id) => hub.Remove(id));

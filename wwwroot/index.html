@@ -88,7 +88,7 @@
   </div>
   <dialog id="deviceModal">
     <form method="dialog" id="deviceForm">
-      <button class="dialog-close" value="cancel">×</button><p class="eyebrow">NEW HARDWARE</p><h2>添加观测设备</h2>
+      <button class="dialog-close" id="closeDeviceModal" type="button" aria-label="关闭添加设备对话框">×</button><p class="eyebrow">NEW HARDWARE</p><h2>添加观测设备</h2>
       <label>设备名称<input id="deviceName" required placeholder="例如：主镜头 CAA"></label>
       <label>设备类型<select id="deviceKind"><option value="Caa">电动 CAA</option><option value="Focuser">电动调焦器</option><option value="CoverCalibrator">电动平场板</option><option value="FilterWheel">电动滤镜轮</option></select></label>
       <div class="split"><label>连接方式<select id="deviceTransport"><option value="Serial">USB 串口</option><option value="Tcp">TCP / Wi-Fi</option></select></label><label id="devicePortLabel">波特率<select id="deviceBaud"><option>9600</option><option>57600</option><option>115200</option></select></label></div>

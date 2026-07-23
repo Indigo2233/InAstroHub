@@ -10,18 +10,26 @@ namespace AstroDeviceHub.Ascom
     [ProgId("ASCOM.AstroDeviceHub.CoverCalibrator")]
     [ComVisible(true)]
     [ClassInterface(ClassInterfaceType.None)]
-    public sealed class HubCoverCalibrator : ICoverCalibratorV2
+    public class HubCoverCalibrator : ICoverCalibratorV2
     {
-        private readonly HubClient hub = new HubClient(HubSettings.BaseUrl, HubSettings.NewClientId("ASCOM-CoverCalibrator"), "CoverCalibrator");
+        private readonly HubClient hub;
+        private readonly int ascomSlot;
         private bool connecting;
+
+        public HubCoverCalibrator() : this(1) { }
+        protected HubCoverCalibrator(int ascomSlot)
+        {
+            this.ascomSlot = ascomSlot;
+            hub = new HubClient(HubSettings.BaseUrl, HubSettings.NewClientId("ASCOM-CoverCalibrator-Device" + ascomSlot), "CoverCalibrator", ascomSlot);
+        }
 
         public bool Connected { get => hub.Connected; set { if (value == hub.Connected) return; if (value) Connect(); else Disconnect(); } }
         public bool Connecting => connecting;
         public string Description => "Astro Device Hub 电动平场板驱动";
-        public string DriverInfo => "InDLCoverCalibrator · Astro Device Hub ASCOM Local Server";
+        public string DriverInfo => "InDLCoverCalibrator-Device" + ascomSlot + " · Astro Device Hub ASCOM Local Server";
         public string DriverVersion => "0.2.0";
         public short InterfaceVersion => 2;
-        public string Name => "InDLCoverCalibrator";
+        public string Name => "InDLCoverCalibrator-Device" + ascomSlot;
         public ArrayList SupportedActions => DriverSupport.NoActions;
         public CoverStatus CoverState => (CoverStatus)Query("cover-state");
         public CalibratorStatus CalibratorState => (CalibratorStatus)Query("calibrator-state");

@@ -80,6 +80,21 @@ public sealed class ClientLeaseSetTests
     }
 }
 
+public sealed class DeviceSlotTests
+{
+    [Fact]
+    public void FirstAvailableSlotUsesLowestVacantSlot()
+    {
+        Assert.Equal(2, DeviceHub.NextAvailableSlot(new[] { 1, 3 }));
+    }
+
+    [Fact]
+    public void NoSlotIsAvailableAfterThreeDevices()
+    {
+        Assert.Null(DeviceHub.NextAvailableSlot(new[] { 1, 2, 3 }));
+    }
+}
+
 public sealed class FirmwareServiceTests
 {
     [Fact]

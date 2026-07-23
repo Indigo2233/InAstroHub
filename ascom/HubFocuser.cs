@@ -9,18 +9,26 @@ namespace AstroDeviceHub.Ascom
     [ProgId("ASCOM.AstroDeviceHub.Focuser")]
     [ComVisible(true)]
     [ClassInterface(ClassInterfaceType.None)]
-    public sealed class HubFocuser : IFocuserV3
+    public class HubFocuser : IFocuserV3
     {
         private const int Maximum = 20000;
-        private readonly HubClient hub = new HubClient(HubSettings.BaseUrl, HubSettings.NewClientId("ASCOM-Focuser"), "Focuser");
+        private readonly HubClient hub;
+        private readonly int ascomSlot;
+
+        public HubFocuser() : this(1) { }
+        protected HubFocuser(int ascomSlot)
+        {
+            this.ascomSlot = ascomSlot;
+            hub = new HubClient(HubSettings.BaseUrl, HubSettings.NewClientId("ASCOM-Focuser-Device" + ascomSlot), "Focuser", ascomSlot);
+        }
 
         public bool Connected { get => hub.Connected; set { if (value == hub.Connected) return; if (value) hub.Connect(); else hub.Disconnect(); } }
         public bool Link { get => Connected; set => Connected = value; }
         public string Description => "Astro Device Hub 电动调焦器驱动";
-        public string DriverInfo => "InEFucoser · Astro Device Hub ASCOM Local Server";
+        public string DriverInfo => "InEFucoser-Device" + ascomSlot + " · Astro Device Hub ASCOM Local Server";
         public string DriverVersion => "0.2.0";
         public short InterfaceVersion => 3;
-        public string Name => "InEFucoser";
+        public string Name => "InEFucoser-Device" + ascomSlot;
         public ArrayList SupportedActions => DriverSupport.NoActions;
         public bool Absolute => true;
         public bool IsMoving { get { int p; bool moving; ReadMotion(out p, out moving); return moving; } }

@@ -18,10 +18,18 @@ namespace AstroDeviceHub.Ascom
         private const string DotNetCategory = "{62C8FE65-4EBB-45E7-B440-6E39B2CDBF29}";
         private static readonly DriverRegistration[] Drivers =
         {
-            new DriverRegistration(typeof(CaaRotator), "ASCOM.AstroDeviceHub.Rotator", "InECAA", "Rotator"),
-            new DriverRegistration(typeof(HubFocuser), "ASCOM.AstroDeviceHub.Focuser", "InEFucoser", "Focuser"),
-            new DriverRegistration(typeof(HubCoverCalibrator), "ASCOM.AstroDeviceHub.CoverCalibrator", "InDLCoverCalibrator", "CoverCalibrator"),
-            new DriverRegistration(typeof(HubFilterWheel), "ASCOM.AstroDeviceHub.FilterWheel", "InEFilterWheel", "FilterWheel")
+            new DriverRegistration(typeof(CaaRotator), "ASCOM.AstroDeviceHub.Rotator", "InECAA-Device1", "Rotator"),
+            new DriverRegistration(typeof(CaaRotatorDevice2), "ASCOM.AstroDeviceHub.Rotator.Device2", "InECAA-Device2", "Rotator"),
+            new DriverRegistration(typeof(CaaRotatorDevice3), "ASCOM.AstroDeviceHub.Rotator.Device3", "InECAA-Device3", "Rotator"),
+            new DriverRegistration(typeof(HubFocuser), "ASCOM.AstroDeviceHub.Focuser", "InEFucoser-Device1", "Focuser"),
+            new DriverRegistration(typeof(HubFocuserDevice2), "ASCOM.AstroDeviceHub.Focuser.Device2", "InEFucoser-Device2", "Focuser"),
+            new DriverRegistration(typeof(HubFocuserDevice3), "ASCOM.AstroDeviceHub.Focuser.Device3", "InEFucoser-Device3", "Focuser"),
+            new DriverRegistration(typeof(HubCoverCalibrator), "ASCOM.AstroDeviceHub.CoverCalibrator", "InDLCoverCalibrator-Device1", "CoverCalibrator"),
+            new DriverRegistration(typeof(HubCoverCalibratorDevice2), "ASCOM.AstroDeviceHub.CoverCalibrator.Device2", "InDLCoverCalibrator-Device2", "CoverCalibrator"),
+            new DriverRegistration(typeof(HubCoverCalibratorDevice3), "ASCOM.AstroDeviceHub.CoverCalibrator.Device3", "InDLCoverCalibrator-Device3", "CoverCalibrator"),
+            new DriverRegistration(typeof(HubFilterWheel), "ASCOM.AstroDeviceHub.FilterWheel", "InEFilterWheel-Device1", "FilterWheel"),
+            new DriverRegistration(typeof(HubFilterWheelDevice2), "ASCOM.AstroDeviceHub.FilterWheel.Device2", "InEFilterWheel-Device2", "FilterWheel"),
+            new DriverRegistration(typeof(HubFilterWheelDevice3), "ASCOM.AstroDeviceHub.FilterWheel.Device3", "InEFilterWheel-Device3", "FilterWheel")
         };
 
         [STAThread]

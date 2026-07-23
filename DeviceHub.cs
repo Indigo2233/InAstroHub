@@ -16,10 +16,11 @@ public enum TransportKind { Serial, Tcp }
 public sealed record DeviceRequest(string Name, DeviceKind Kind, TransportKind Transport, string Endpoint, int? Port, int? BaudRate);
 public sealed record DeviceCommand(string Action, string ClientId, int? Value = null, string? Payload = null);
 public sealed record DeviceLeaseRequest(string ClientId);
-public sealed record DeviceSnapshot(string Id, string Name, DeviceKind Kind, TransportKind Transport, string Endpoint, string Status, string? Firmware, string? LastResponse, IReadOnlyCollection<string> Clients, int ClientLimit);
+public sealed record DeviceSnapshot(string Id, string Name, DeviceKind Kind, int AscomSlot, TransportKind Transport, string Endpoint, string Status, string? Firmware, string? LastResponse, IReadOnlyCollection<string> Clients, int ClientLimit);
 
 public sealed class DeviceHub : IDisposable
 {
+    internal const int DevicesPerKindLimit = 3;
     private static readonly IReadOnlyDictionary<DeviceKind, int> Limits = new Dictionary<DeviceKind, int>
     {
         [DeviceKind.Caa] = 2,
@@ -29,6 +30,7 @@ public sealed class DeviceHub : IDisposable
     };
 
     private readonly ConcurrentDictionary<string, ManagedDevice> _devices = new();
+    private readonly object _configurationGate = new();
     private readonly string _configPath;
 
     public DeviceHub()
@@ -38,7 +40,7 @@ public sealed class DeviceHub : IDisposable
     }
 
     public static IEnumerable<string> ListPorts() => SerialPort.GetPortNames().OrderBy(x => x);
-    public IEnumerable<DeviceSnapshot> List() => _devices.Values.OrderBy(x => x.Kind).ThenBy(x => x.Name).Select(x => x.Snapshot());
+    public IEnumerable<DeviceSnapshot> List() => _devices.Values.OrderBy(x => x.Kind).ThenBy(x => x.AscomSlot).Select(x => x.Snapshot());
     public object ServerStatus()
     {
         var snapshots = List().ToArray();
@@ -57,11 +59,18 @@ public sealed class DeviceHub : IDisposable
     {
         if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Endpoint))
             return Results.BadRequest(new { message = "设备名称和连接地址不能为空。" });
-        var id = Guid.NewGuid().ToString("N")[..8];
-        var device = new ManagedDevice(id, request, Limits[request.Kind]);
-        _devices.TryAdd(id, device);
+        ManagedDevice device;
+        lock (_configurationGate)
+        {
+            var slot = NextAvailableSlot(_devices.Values.Where(x => x.Kind == request.Kind).Select(x => x.AscomSlot));
+            if (slot is null)
+                return Results.BadRequest(new { message = $"每类设备最多添加 {DevicesPerKindLimit} 台。请移除现有设备后再添加。" });
+            var id = Guid.NewGuid().ToString("N")[..8];
+            device = new ManagedDevice(id, request, Limits[request.Kind], slot.Value);
+            _devices.TryAdd(id, device);
+        }
         Save();
-        return Results.Created($"/api/devices/{id}", device.Snapshot());
+        return Results.Created($"/api/devices/{device.Id}", device.Snapshot());
     }
 
     public IResult Remove(string id)
@@ -74,8 +83,17 @@ public sealed class DeviceHub : IDisposable
 
     public IResult FindByKind(DeviceKind kind)
     {
-        var device = _devices.Values.OrderBy(x => x.Name).FirstOrDefault(x => x.Kind == kind);
+        var device = _devices.Values.Where(x => x.Kind == kind).OrderBy(x => x.AscomSlot).FirstOrDefault();
         return device is null ? Results.NotFound(new { message = $"尚未登记 {kind} 设备。" }) : Results.Ok(device.Snapshot());
+    }
+
+    public IResult FindByKindAndSlot(DeviceKind kind, int slot)
+    {
+        if (slot is < 1 or > DevicesPerKindLimit) return Results.BadRequest(new { message = "设备槽位必须介于 Device1 和 Device3。" });
+        var device = _devices.Values.FirstOrDefault(x => x.Kind == kind && x.AscomSlot == slot);
+        return device is null
+            ? Results.NotFound(new { message = $"尚未配置 {kind}-Device{slot}。请先在 Astro Device Hub 中添加该设备。" })
+            : Results.Ok(device.Snapshot());
     }
 
     public async Task<IResult> ConnectAsync(string id, DeviceLeaseRequest lease)
@@ -142,8 +160,18 @@ public sealed class DeviceHub : IDisposable
         try
         {
             var items = JsonSerializer.Deserialize<List<StoredDevice>>(File.ReadAllText(_configPath), JsonOptions()) ?? new();
-            foreach (var item in items)
-                _devices[item.Id] = new ManagedDevice(item.Id, item.Request, Limits[item.Request.Kind]);
+            var occupied = new Dictionary<DeviceKind, HashSet<int>>();
+            foreach (var item in items.OrderBy(x => x.Id))
+            {
+                if (!occupied.TryGetValue(item.Request.Kind, out var slots))
+                    occupied[item.Request.Kind] = slots = new HashSet<int>();
+                var slot = item.AscomSlot is >= 1 and <= DevicesPerKindLimit && !slots.Contains(item.AscomSlot)
+                    ? item.AscomSlot
+                    : NextAvailableSlot(slots) ?? 0;
+                if (slot == 0) continue;
+                slots.Add(slot);
+                _devices[item.Id] = new ManagedDevice(item.Id, item.Request, Limits[item.Request.Kind], slot);
+            }
         }
         catch (Exception ex)
         {
@@ -154,7 +182,7 @@ public sealed class DeviceHub : IDisposable
     private void Save()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(_configPath)!);
-        var items = _devices.Values.Select(x => new StoredDevice(x.Id, x.Request)).OrderBy(x => x.Id).ToArray();
+        var items = _devices.Values.Select(x => new StoredDevice(x.Id, x.Request, x.AscomSlot)).OrderBy(x => x.Id).ToArray();
         var temporary = _configPath + ".tmp";
         File.WriteAllText(temporary, JsonSerializer.Serialize(items, JsonOptions()));
         File.Move(temporary, _configPath, true);
@@ -167,7 +195,15 @@ public sealed class DeviceHub : IDisposable
         return options;
     }
 
-    private sealed record StoredDevice(string Id, DeviceRequest Request);
+    internal static int? NextAvailableSlot(IEnumerable<int> occupiedSlots)
+    {
+        var occupied = new HashSet<int>(occupiedSlots);
+        foreach (var slot in Enumerable.Range(1, DevicesPerKindLimit))
+            if (!occupied.Contains(slot)) return slot;
+        return null;
+    }
+
+    private sealed record StoredDevice(string Id, DeviceRequest Request, int AscomSlot = 0);
 }
 
 internal sealed class ManagedDevice : IDisposable
@@ -183,10 +219,11 @@ internal sealed class ManagedDevice : IDisposable
     public string Id { get; }
     public string Name => _request.Name;
     public DeviceKind Kind => _request.Kind;
+    public int AscomSlot { get; }
     public DeviceRequest Request => _request;
-    public ManagedDevice(string id, DeviceRequest request, int clientLimit) { Id = id; _request = request; _clients = new ClientLeaseSet(clientLimit); }
+    public ManagedDevice(string id, DeviceRequest request, int clientLimit, int ascomSlot) { Id = id; _request = request; _clients = new ClientLeaseSet(clientLimit); AscomSlot = ascomSlot; }
 
-    public DeviceSnapshot Snapshot() => new(Id, Name, Kind, _request.Transport, _request.Endpoint, _status, _firmware, _lastResponse, _clients.Snapshot(), _clients.Limit);
+    public DeviceSnapshot Snapshot() => new(Id, Name, Kind, AscomSlot, _request.Transport, _request.Endpoint, _status, _firmware, _lastResponse, _clients.Snapshot(), _clients.Limit);
     public async Task ConnectAsync(string clientId)
     {
         await _gate.WaitAsync();

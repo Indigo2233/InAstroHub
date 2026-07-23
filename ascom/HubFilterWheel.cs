@@ -10,16 +10,23 @@ namespace AstroDeviceHub.Ascom
     [ProgId("ASCOM.AstroDeviceHub.FilterWheel")]
     [ComVisible(true)]
     [ClassInterface(ClassInterfaceType.None)]
-    public sealed class HubFilterWheel : IFilterWheelV2
+    public class HubFilterWheel : IFilterWheelV2
     {
         private const int SlotCount = 7;
-        private readonly HubClient hub = new HubClient(HubSettings.BaseUrl, HubSettings.NewClientId("ASCOM-FilterWheel"), "FilterWheel");
+        private readonly HubClient hub;
+        private readonly int ascomSlot;
+        public HubFilterWheel() : this(1) { }
+        protected HubFilterWheel(int ascomSlot)
+        {
+            this.ascomSlot = ascomSlot;
+            hub = new HubClient(HubSettings.BaseUrl, HubSettings.NewClientId("ASCOM-FilterWheel-Device" + ascomSlot), "FilterWheel", ascomSlot);
+        }
         public bool Connected { get => hub.Connected; set { if (value == hub.Connected) return; if (value) hub.Connect(); else hub.Disconnect(); } }
         public string Description => "Astro Device Hub 电动滤镜轮驱动";
-        public string DriverInfo => "InEFilterWheel · Astro Device Hub ASCOM Local Server";
+        public string DriverInfo => "InEFilterWheel-Device" + ascomSlot + " · Astro Device Hub ASCOM Local Server";
         public string DriverVersion => "0.2.0";
         public short InterfaceVersion => 2;
-        public string Name => "InEFilterWheel";
+        public string Name => "InEFilterWheel-Device" + ascomSlot;
         public ArrayList SupportedActions => DriverSupport.NoActions;
         public string[] Names => Enumerable.Range(1, SlotCount).Select(i => "Filter " + i).ToArray();
         public int[] FocusOffsets => new int[SlotCount];

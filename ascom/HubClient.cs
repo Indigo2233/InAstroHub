@@ -16,23 +16,25 @@ namespace AstroDeviceHub.Ascom
         private readonly JavaScriptSerializer json = new JavaScriptSerializer();
         private string deviceId;
 
-        internal HubClient(string baseUrl, string clientId, string kind)
+        internal HubClient(string baseUrl, string clientId, string kind, int ascomSlot)
         {
             BaseUrl = string.IsNullOrWhiteSpace(baseUrl) ? "http://127.0.0.1:5000" : baseUrl.TrimEnd('/');
             ClientId = clientId;
             Kind = kind;
+            AscomSlot = ascomSlot;
             http = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
         }
 
         internal string BaseUrl { get; private set; }
         internal string ClientId { get; private set; }
         internal string Kind { get; private set; }
+        internal int AscomSlot { get; private set; }
         internal bool Connected { get; private set; }
 
         internal void Connect()
         {
             EnsureHubAvailable();
-            var device = GetObject("/api/devices/by-kind/" + Kind);
+            var device = GetObject("/api/devices/by-kind/" + Kind + "/slot/" + AscomSlot);
             deviceId = Convert.ToString(device["id"]);
             Post("/api/devices/" + deviceId + "/connect", new Dictionary<string, object> { ["clientId"] = ClientId });
             Connected = true;
